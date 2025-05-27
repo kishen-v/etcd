@@ -93,6 +93,9 @@ func CheckAfterTest(d time.Duration) error {
 		runtime.Gosched()
 		time.Sleep(50 * time.Millisecond)
 	}
+	if bad == "" {
+		return fmt.Errorf("appears to have leaked due to other factors: %s\n", stacks)
+	}
 	return fmt.Errorf("appears to have leaked %s:\n%s", bad, stacks)
 }
 
