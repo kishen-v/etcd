@@ -163,9 +163,9 @@ func newReport(benchmarkType string) report.Report {
 		p = "%g"
 	}
 	if sample {
-		return report.NewReportSample(p, benchmarkType)
+		return report.NewReportSample(p, benchmarkType, generatePerfJson)
 	}
-	return report.NewReport(p, benchmarkType)
+	return report.NewReport(p, benchmarkType, generatePerfJson)
 }
 
 func newWeightedReport(benchmarkType string) report.Report {
@@ -176,5 +176,5 @@ func newWeightedReport(benchmarkType string) report.Report {
 	if sample {
 		return report.NewReportSample(p, benchmarkType)
 	}
-	return report.NewWeightedReport(report.NewReport(p, benchmarkType), p, benchmarkType)
+	return report.NewWeightedReport(report.NewReport(p, benchmarkType), p, benchmarkType, generatePerfJson)
 }

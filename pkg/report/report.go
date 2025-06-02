@@ -17,9 +17,11 @@
 package report
 
 import (
+	"encoding/json"
 	"fmt"
 	"maps"
 	"math"
+	"os"
 	"slices"
 	"sort"
 	"strings"
@@ -41,9 +43,10 @@ type Result struct {
 func (res *Result) Duration() time.Duration { return res.End.Sub(res.Start) }
 
 type report struct {
-	results       chan Result
-	precision     string
-	benchmarkType string
+	results          chan Result
+	precision        string
+	benchmarkType    string
+	generatePerfJson bool
 
 	stats Stats
 	sps   *secondPoints
@@ -103,20 +106,23 @@ type Report interface {
 	Stats() <-chan Stats
 }
 
-func NewReport(precision, benchmarkType string) Report { return newReport(precision, benchmarkType) }
+func NewReport(precision, benchmarkType string, generatePerfJson bool) Report {
+	return newReport(precision, benchmarkType, generatePerfJson)
+}
 
-func newReport(precision, benchmarkType string) *report {
+func newReport(precision, benchmarkType string, generatePerfData bool) *report {
 	r := &report{
-		results:       make(chan Result, 16),
-		precision:     precision,
-		benchmarkType: benchmarkType,
+		results:          make(chan Result, 16),
+		precision:        precision,
+		benchmarkType:    benchmarkType,
+		generatePerfJson: generatePerfData,
 	}
 	r.stats.ErrorDist = make(map[string]int)
 	return r
 }
 
-func NewReportSample(precision, benchmarkType string) Report {
-	r := NewReport(precision, benchmarkType).(*report)
+func NewReportSample(precision, benchmarkType string, generatePerfJson bool) Report {
+	r := NewReport(precision, benchmarkType, generatePerfJson).(*report)
 	r.sps = newSecondPoints()
 	return r
 }
@@ -178,8 +184,8 @@ func (r *report) sec2str(sec float64) string { return fmt.Sprintf(r.precision+" 
 
 type reportRate struct{ *report }
 
-func NewReportRate(precision, benchmarkType string) Report {
-	return &reportRate{NewReport(precision, benchmarkType).(*report)}
+func NewReportRate(precision, benchmarkType string, generatePerfJson bool) Report {
+	return &reportRate{NewReport(precision, benchmarkType, generatePerfJson).(*report)}
 }
 
 func (r *reportRate) String() string {
@@ -249,11 +255,10 @@ func (r *report) sprintLatencies() string {
 			s += fmt.Sprintf("  %v%% in %s.\n", pctls[i], r.sec2str(data[i]))
 		}
 	}
-	s += r.generateJsonPerfReport()
 	return s
 }
 
-func (r *report) generateJsonPerfReport() string {
+func (r *report) generateJsonPerfReport() {
 	pcls, data := Percentiles(r.stats.Lats)
 	pclsData := make(map[float64]float64)
 	for i := 0; i < len(pcls); i++ {
@@ -275,7 +280,22 @@ func (r *report) generateJsonPerfReport() string {
 			},
 		},
 	}
-	return fmt.Sprintf("Perfdash Report\n: %+v", report)
+	reportB, _ := json.MarshalIndent(report, "", "  ")
+	fileName := "perfReport.json"
+
+	// Create or truncate the file
+	file, err := os.Create(fileName)
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return
+	}
+	defer file.Close()
+	_, err = file.WriteString(string(reportB))
+	if err != nil {
+		fmt.Println("Error writing to file:", err)
+		return
+	}
+	fmt.Println("File created and content written successfully.")
 }
 
 func (r *report) histogram() string {

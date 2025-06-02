@@ -40,7 +40,7 @@ func init() {
 	leaseKeepaliveCmd.Flags().IntVar(&leaseKeepaliveTotal, "total", 10000, "Total number of lease keepalive requests")
 }
 
-func leaseKeepaliveFunc(_ *cobra.Command, _ []string) {
+func leaseKeepaliveFunc(cmd *cobra.Command, _ []string) {
 	requests := make(chan struct{})
 	clients := mustCreateClients(totalClients, totalConns)
 
