@@ -41,8 +41,9 @@ type Result struct {
 func (res *Result) Duration() time.Duration { return res.End.Sub(res.Start) }
 
 type report struct {
-	results   chan Result
-	precision string
+	results       chan Result
+	precision     string
+	benchmarkType string
 
 	stats Stats
 	sps   *secondPoints
@@ -102,19 +103,20 @@ type Report interface {
 	Stats() <-chan Stats
 }
 
-func NewReport(precision string) Report { return newReport(precision) }
+func NewReport(precision, benchmarkType string) Report { return newReport(precision, benchmarkType) }
 
-func newReport(precision string) *report {
+func newReport(precision, benchmarkType string) *report {
 	r := &report{
-		results:   make(chan Result, 16),
-		precision: precision,
+		results:       make(chan Result, 16),
+		precision:     precision,
+		benchmarkType: benchmarkType,
 	}
 	r.stats.ErrorDist = make(map[string]int)
 	return r
 }
 
-func NewReportSample(precision string) Report {
-	r := NewReport(precision).(*report)
+func NewReportSample(precision, benchmarkType string) Report {
+	r := NewReport(precision, benchmarkType).(*report)
 	r.sps = newSecondPoints()
 	return r
 }
@@ -176,8 +178,8 @@ func (r *report) sec2str(sec float64) string { return fmt.Sprintf(r.precision+" 
 
 type reportRate struct{ *report }
 
-func NewReportRate(precision string) Report {
-	return &reportRate{NewReport(precision).(*report)}
+func NewReportRate(precision, benchmarkType string) Report {
+	return &reportRate{NewReport(precision, benchmarkType).(*report)}
 }
 
 func (r *reportRate) String() string {
@@ -268,7 +270,7 @@ func (r *report) generateJsonPerfReport() string {
 				},
 				Unit: "ms",
 				Labels: Labels{
-					Metric: "Test",
+					Metric: r.benchmarkType,
 				},
 			},
 		},
