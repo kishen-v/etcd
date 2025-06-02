@@ -93,9 +93,9 @@ func watchLatencyFunc(_ *cobra.Command, _ []string) {
 		}()
 	}
 
-	putReport := newReport()
+	putReport := newReport(watchLatencyCmd.Name())
 	putReportResults := putReport.Run()
-	watchReport := newReport()
+	watchReport := newReport(watchLatencyCmd.Name())
 	watchReportResults := watchReport.Run()
 	for i := 0; i < watchLPutTotal; i++ {
 		// limit key put as per reqRate

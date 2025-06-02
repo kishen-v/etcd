@@ -105,7 +105,7 @@ func mvccPutFunc(_ *cobra.Command, _ []string) {
 	vals := createBytesSlice(valueSize, mvccTotalRequests*nrTxnOps)
 
 	weight := float64(nrTxnOps)
-	r := newWeightedReport()
+	r := newWeightedReport(mvccCmd.Name())
 	rrc := r.Results()
 
 	rc := r.Run()

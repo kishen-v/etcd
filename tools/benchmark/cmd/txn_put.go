@@ -78,7 +78,7 @@ func txnPutFunc(_ *cobra.Command, _ []string) {
 	bar = pb.New(txnPutTotal)
 	bar.Start()
 
-	r := newReport()
+	r := newReport(txnPutCmd.Name())
 	for i := range clients {
 		wg.Add(1)
 		go func(c *v3.Client) {
