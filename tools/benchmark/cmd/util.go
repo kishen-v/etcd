@@ -176,5 +176,5 @@ func newWeightedReport(benchmarkType string) report.Report {
 	if sample {
 		return report.NewReportSample(p, benchmarkType)
 	}
-	return report.NewWeightedReport(report.NewReport(p, benchmarkType), p)
+	return report.NewWeightedReport(report.NewReport(p, benchmarkType), p, benchmarkType)
 }
