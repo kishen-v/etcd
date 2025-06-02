@@ -247,11 +247,11 @@ func (r *report) sprintLatencies() string {
 			s += fmt.Sprintf("  %v%% in %s.\n", pctls[i], r.sec2str(data[i]))
 		}
 	}
-	r.generateJsonPerfReport()
+	s += r.generateJsonPerfReport()
 	return s
 }
 
-func (r *report) generateJsonPerfReport() {
+func (r *report) generateJsonPerfReport() string {
 	pcls, data := Percentiles(r.stats.Lats)
 	pclsData := make(map[float64]float64)
 	for i := 0; i < len(pcls); i++ {
@@ -273,7 +273,7 @@ func (r *report) generateJsonPerfReport() {
 			},
 		},
 	}
-	fmt.Printf("Perfdash Report\n: %+v", report)
+	return fmt.Sprintf("Perfdash Report\n: %+v", report)
 }
 
 func (r *report) histogram() string {
