@@ -48,6 +48,27 @@ type report struct {
 	sps   *secondPoints
 }
 
+type Metrics struct {
+	Perc50 float64 `json:"Perc50"`
+	Perc90 float64 `json:"Perc90"`
+	Perc99 float64 `json:"Perc99"`
+}
+
+type Labels struct {
+	Metric string `json:"Metric"`
+}
+
+type DataItem struct {
+	Data   Metrics `json:"data"`
+	Unit   string  `json:"unit"`
+	Labels Labels  `json:"labels"`
+}
+
+type perfdashReport struct {
+	Version   string     `json:"version"`
+	DataItems []DataItem `json:"dataItems"`
+}
+
 // Stats exposes results raw data.
 type Stats struct {
 	AvgTotal   float64
@@ -226,7 +247,33 @@ func (r *report) sprintLatencies() string {
 			s += fmt.Sprintf("  %v%% in %s.\n", pctls[i], r.sec2str(data[i]))
 		}
 	}
+	r.generateJsonPerfReport()
 	return s
+}
+
+func (r *report) generateJsonPerfReport() {
+	pcls, data := Percentiles(r.stats.Lats)
+	pclsData := make(map[float64]float64)
+	for i := 0; i < len(pcls); i++ {
+		pclsData[pcls[i]] = data[i]
+	}
+	report := perfdashReport{
+		Version: "v1",
+		DataItems: []DataItem{
+			{
+				Data: Metrics{
+					Perc50: pclsData[50],
+					Perc90: pclsData[90],
+					Perc99: pclsData[99],
+				},
+				Unit: "ms",
+				Labels: Labels{
+					Metric: "Test",
+				},
+			},
+		},
+	}
+	fmt.Printf("Perfdash Report\n: %+v", report)
 }
 
 func (r *report) histogram() string {
