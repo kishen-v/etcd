@@ -257,7 +257,7 @@ func (r *report) generateJsonPerfReport() string {
 	pcls, data := Percentiles(r.stats.Lats)
 	pclsData := make(map[float64]float64)
 	for i := 0; i < len(pcls); i++ {
-		pclsData[pcls[i]] = data[i]
+		pclsData[pcls[i]] = data[i] * 1000
 	}
 	report := perfdashReport{
 		Version: "v1",
