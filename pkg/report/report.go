@@ -255,10 +255,11 @@ func (r *report) sprintLatencies() string {
 			s += fmt.Sprintf("  %v%% in %s.\n", pctls[i], r.sec2str(data[i]))
 		}
 	}
+	s += r.generateJsonPerfReport()
 	return s
 }
 
-func (r *report) generateJsonPerfReport() {
+func (r *report) generateJsonPerfReport() string {
 	pcls, data := Percentiles(r.stats.Lats)
 	pclsData := make(map[float64]float64)
 	for i := 0; i < len(pcls); i++ {
@@ -281,21 +282,22 @@ func (r *report) generateJsonPerfReport() {
 		},
 	}
 	reportB, _ := json.MarshalIndent(report, "", "  ")
-	fileName := "perfReport.json"
-
-	// Create or truncate the file
-	file, err := os.Create(fileName)
-	if err != nil {
-		fmt.Println("Error creating file:", err)
-		return
-	}
-	defer file.Close()
-	_, err = file.WriteString(string(reportB))
-	if err != nil {
-		fmt.Println("Error writing to file:", err)
-		return
-	}
-	fmt.Println("File created and content written successfully.")
+	// fileName := "perfReport.json"
+	//
+	// // Create or truncate the file
+	// file, err := os.Create(fileName)
+	// if err != nil {
+	// 	fmt.Println("Error creating file:", err)
+	// 	return
+	// }
+	// defer file.Close()
+	// _, err = file.WriteString(string(reportB))
+	// if err != nil {
+	// 	fmt.Println("Error writing to file:", err)
+	// 	return ""
+	// }
+	// fmt.Println("File created and content written successfully.")
+	return string(reportB)
 }
 
 func (r *report) histogram() string {
