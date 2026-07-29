@@ -109,8 +109,20 @@ func (d *dummyStubServer) UnaryCall(context.Context, *testpb.SimpleRequest) (*te
 	}, nil
 }
 
+// ResetCounter resets the call counter to zero.
+func (d *dummyStubServer) ResetCounter() {
+	atomic.StoreUint64(&d.counter, 0)
+}
+
 // NewDummyStubServer creates a simple test server that serves Unary calls with
 // responses with the given payload.
 func NewDummyStubServer(body []byte) *StubServer {
 	return New(&dummyStubServer{})
+}
+
+// ResetDummyStubServerCounter resets the internal call counter of a StubServer
+// created by NewDummyStubServer. It panics if ss was not created by
+// NewDummyStubServer.
+func ResetDummyStubServerCounter(ss *StubServer) {
+	ss.testService.(*dummyStubServer).ResetCounter()
 }

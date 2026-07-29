@@ -16,9 +16,11 @@ package naming_test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -92,6 +94,32 @@ func testEtcdGRPCResolver(t *testing.T, lbPolicy string) {
 		t.Fatalf("unexpected response from foo (e1): %s", resp.GetPayload().GetBody())
 	}
 
+	// For round_robin, wait until both sub-connections are READY by spinning
+	// until each server has responded at least once. On slow architectures
+	// (e.g. PPC) the second sub-connection can take significantly longer to
+	// establish, which would skew the distribution measured below.
+	if lbPolicy == "round_robin" {
+		warmupCtx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+		defer cancel()
+		s1Seen, s2Seen := false, false
+		for !s1Seen || !s2Seen {
+			r, err := c.UnaryCall(warmupCtx, &testpb.SimpleRequest{}, grpc.WaitForReady(true))
+			require.NoError(t, err, "warm-up call failed")
+			// A response body of "1" is the first call ever handled by that
+			// server — its sub-connection just became READY.
+			if string(r.GetPayload().GetBody()) == "1" {
+				if !s1Seen {
+					s1Seen = true
+				} else {
+					s2Seen = true
+				}
+			}
+		}
+		// Reset counters so the measurement loop below starts from a clean slate.
+		grpctesting.ResetDummyStubServerCounter(s1)
+		grpctesting.ResetDummyStubServerCounter(s2)
+	}
+
 	// Send more requests
 	lastResponse := []byte{'1'}
 	totalRequests := 3500
@@ -118,9 +146,9 @@ func testEtcdGRPCResolver(t *testing.T, lbPolicy string) {
 		responses, err := strconv.Atoi(string(lastResponse))
 		require.NoErrorf(t, err, "couldn't convert to int: %s", lastResponse)
 
-		// Allow 25% tolerance as round robin is not perfect and we don't want the test to flake
+		// Allow 5% tolerance as round robin is not perfect and we don't want the test to flake
 		expected := float64(totalRequests) * 0.5
-		assert.InEpsilonf(t, expected, float64(responses), 0.25, "unexpected total responses from foo: %s", lastResponse)
+		assert.InEpsilonf(t, expected, float64(responses), 0.05, "unexpected total responses from foo: %s", lastResponse)
 	}
 }
 
